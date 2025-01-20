@@ -1,6 +1,8 @@
-import {useImmer} from 'use-immer'
+import {useImmerReducer} from 'use-immer'
 import NoteList from './NoteList.jsx'
 import NoteForm from './NoteForm.jsx';
+import { NotesContext } from './NoteContext.jsx'
+import { NotesDispatchContext } from './NoteContext.jsx'
 
 let id = 0;
 const initialNotes = [
@@ -9,43 +11,36 @@ const initialNotes = [
     {id: id++, text: 'Learn Javascript', done: false}
 ];
 
+function NotesReducer(draft, action) {
+
+    if (action.type === "ADD_NOTE") {
+        draft.push({
+            id: id++,
+            text: action.text,
+            done: false
+        });
+    } else if (action.type === "CHANGE_NOTE") {
+        const index = draft.findIndex(item => item.id === action.id);
+        draft[index].text = action.text;
+        draft[index].done = action.done;
+    } else if (action.type === "DELETE_NOTE") {
+        const index = draft.findIndex(item => item.id === action.id);
+        draft.splice(index, 1);        
+    }
+    
+}
+
 export default function NoteApp() {
-    const [notes, setNotes] = useImmer(initialNotes);
-
-    function handleAddNote(text) {
-        setNotes(draft => {
-            draft.push({
-                id: id++,
-                text: text,
-                done: false
-            })
-        }
-        );
-    }
-
-    function handleChangeNote(note) {
-        setNotes(
-            draft => {
-                const index = draft.findIndex( item => item.id === note.id);
-                draft[index] = note;
-            }
-        )
-    }
-
-    function handleDeleteNote(note) {
-        setNotes(
-            draft => {
-                const index = draft.findIndex(item => item.id === note.id);
-                draft.splice(index, 1);
-            }
-        );
-    }
-
+    const [notes, dispatch] = useImmerReducer(NotesReducer, initialNotes);
     return (
         <div>
-            <h1>Note App</h1>
-            <NoteForm onAddNote={handleAddNote}/>
-            <NoteList notes={notes} onChangeNote={handleChangeNote} onDeleteNote={handleDeleteNote} />
+            <NotesContext.Provider value={notes} >
+                <NotesDispatchContext.Provider value={dispatch} >
+                    <h1>Note App</h1>
+                    <NoteForm />
+                    <NoteList />
+                </NotesDispatchContext.Provider>
+            </NotesContext.Provider>
         </div>
     );
 }
